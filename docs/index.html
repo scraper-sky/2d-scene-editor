@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>2D Scene Editor</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Toolbar for your tools -->
+  <div id="toolbar">
+    <button id="addButton">Add</button>
+    <button id="removeButton">Remove</button>
+    <button id="moveButton">Move</button>
+    <button id="scaleButton">Scale</button>
+    <button id="pushAiButton">Push to AI</button>
+  </div>
+
+  <!-- Phaser will inject its Canvas here -->
+  <div id="phaser-canvas"></div>
+
+  <!-- Your module entry point -->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
