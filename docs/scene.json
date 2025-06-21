@@ -1,3 +1,4 @@
 [
-    { "id":"circle1", "key":"circle", "x":400, "y":300, "rotation":0, "scale":1 }
+    { "id":"circle1", "key":"circle", "x":400, "y":300, "rotation":0, "scale":1 },
+    { "id": "circle2", "key": "circle", "x": 200, "y": 150, "rotation": 0, "scale": 1 }
 ]
