@@ -1,5 +1,4 @@
 // src/editor.js
-import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js';
 import { addSprite, removeSprite } from './tools/addRemove.js';
 import { enableMoveTool }          from './tools/move.js';
 import { scaleSprite }             from './tools/scale.js';

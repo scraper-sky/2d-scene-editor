@@ -1,4 +1,3 @@
-import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js';
 
 /**
  * Adds a new sprite to the scene and updates the transform map.

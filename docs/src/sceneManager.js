@@ -1,7 +1,4 @@
-import Phaser from 'https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js';
-
 //here the code does a live-tracked storing of object positions, rotation, scale, and other metadata
-
 export class SceneManager{
     /**
    * @param {Phaser.Scene} scene  The Phaser.Scene instance
@@ -9,7 +6,7 @@ export class SceneManager{
   constructor(scene){
     this.scene = scene;
     this.transformMap = {}; //holds the live/latest transform data for each object by its id
-    this.sprite = {}; //reference to phaser sprites by id
+    this.sprites = {}; //reference to phaser sprites by id
   }
 
   /** Calls in preload(): loads scene.json into Phaser's cache */
@@ -20,7 +17,7 @@ export class SceneManager{
   /** Calls in create(): reads sceneData and spawns each sprite  */
   create(){
     //grabs the parsed JSON array from cache
-    const data = this.scene.cache.get('sceneData');
+    const data = this.scene.cache.json.get('sceneData');
 
      //check and ensure an array of definitions
     if(!Array.isArray(data)){
@@ -45,6 +42,9 @@ export class SceneManager{
       // Store references for future lookup
       this.sprites[id] = sprite;
       this.transformMap[id] = { x, y, rotation, scale };
+
+      console.log('After create, transformMap =', this.transformMap);
+
 
     })
   }

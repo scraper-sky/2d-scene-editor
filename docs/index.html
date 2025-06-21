@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Toolbar for your tools -->
   <div id="toolbar">
     <button id="addButton">Add</button>
     <button id="removeButton">Remove</button>
@@ -15,11 +14,11 @@
     <button id="scaleButton">Scale</button>
     <button id="pushAiButton">Push to AI</button>
   </div>
-
-  <!-- Phaser will inject its Canvas here -->
   <div id="phaser-canvas"></div>
 
-  <!-- Your module entry point -->
+  <!-- 1) Phaser global bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
+  <!-- 2) Your app logic as an ES module -->
   <script type="module" src="src/main.js"></script>
 </body>
 </html>

@@ -1,4 +1,3 @@
-import Phaser from  'https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js';
 
 /**
  * Scales the selected sprite up/down and updates the map.
