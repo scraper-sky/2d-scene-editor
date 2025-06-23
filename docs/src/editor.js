@@ -1,6 +1,8 @@
 import { addSprite, removeSprite } from './tools/addRemove.js';
 import { enableMoveTool }          from './tools/move.js';
 import { scaleSprite }             from './tools/scale.js';
+import { saveSceneJSON, loadSceneJSON } from './tools/saveLoad.js';
+import { pushToAI } from './ai.js';
 
 /**
  * Hooks up UI buttons and canvas interactions to your scene tools.
@@ -76,6 +78,37 @@ export function setupEditor(sceneManager, scene) {
 
   // Push-to-AI stub
   document.getElementById('pushAiButton').addEventListener('click', async () => {
-    console.log('Push to AI clicked; will call ai.pushToAI()');
+    const instr = document.getElementById('aiInstruction').value.trim();
+    if (!instr) {
+      return alert('Please enter an instruction above.');
+    }
+    // disable the button while we wait
+    const btn = document.getElementById('pushAiButton');
+    btn.disabled = true;
+    btn.textContent = 'Thinking…';
+
+    try {
+      await pushToAI(sceneManager, instr);
+    } catch (e) {
+      console.error('AI push failed', e);
+      alert('AI call failed, see console.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Push to AI';
+    }
+  });
+
+  // Save Scene → download current scene.json
+  document.getElementById('saveButton').addEventListener('click', () => {
+    saveSceneJSON(sceneManager);
+  });
+
+  // Load Scene → open file picker
+  document.getElementById('loadButton').addEventListener('click', () => {
+    document.getElementById('loadInput').click();
+  });
+  // When a file is chosen, read & apply it
+  document.getElementById('loadInput').addEventListener('change', (e) => {
+    loadSceneJSON(e, sceneManager);
   });
 }

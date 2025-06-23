@@ -1,159 +1,186 @@
-//here the code does a live-tracked storing of object positions, rotation, scale, and other metadata
-export class SceneManager{
+// here the code does a live-tracked storing of object positions, rotation, scale, and other metadata
+export class SceneManager {
   /**
- * @param {Phaser.Scene} scene  The Phaser.Scene instance
- */
-constructor(scene){
-  this.scene = scene;
-  this.transformMap = {}; //holds the live/latest transform data for each object by its id
-  this.sprites = {}; //reference to phaser sprites by id
-}
-
-/** Calls in preload(): loads scene.json into Phaser's cache */
-preload() {
-  // Always load the manifest
-  this.scene.load.json('sceneData', 'scene.json');
-
-  // Once in cache, queue up only valid sprite keys
-  this.scene.load.on('filecomplete-json-sceneData', () => {
-    const defs = this.scene.cache.json.get('sceneData') || [];
-
-    // Gather unique keys for sprite entries only
-    const spriteKeys = Array.from(new Set(
-      defs
-        .filter(d => d.type === 'sprite' && typeof d.key === 'string' && d.key.length)
-        .map(d => d.key)
-    ));
-
-    // Queue each sprite image for loading
-    spriteKeys.forEach(key => {
-      this.scene.load.image(key, `assets/${key}.png`);
-    });
-
-    // Restart the loader so Phaser fetches these images
-    this.scene.load.start();
-  });
-}
-
-/** Calls in create(): reads sceneData and spawns each sprite  */
-create() {
-  // Grab the parsed JSON array
-  const data = this.scene.cache.json.get('sceneData');
-  if (!Array.isArray(data)) {
-    console.error('sceneData must be an array of object definitions');
-    return;
+   * @param {Phaser.Scene} scene  The Phaser.Scene instance
+   */
+  constructor(scene) {
+    this.scene = scene;
+    this.transformMap = {};    // holds the live/latest transform data for each object by its id
+    this.sprites = {};         // reference to phaser objects by id
+    this.idCounters = {};      // for generating unique IDs
   }
 
-  data.forEach(def => {
-    const {
-      id,
-      type,
-      x, y,
-      rotation = 0,
-      scale = 1
-    } = def;
+  /** Calls in preload(): loads scene.json into Phaser's cache */
+  preload() {
+    // Always load the manifest
+    this.scene.load.json('sceneData', 'scene.json');
 
-    let obj;
+    // Once in cache, queue up only valid sprite keys
+    this.scene.load.on('filecomplete-json-sceneData', () => {
+      const defs = this.scene.cache.json.get('sceneData') || [];
 
-    // Branch on type
-    if (type === 'sprite') {
-      // Sprite: use the preloaded texture key
-      obj = this.scene.add.sprite(x, y, def.key);
-    } else if (type === 'primitive') {
-      // Primitive: draw a shape with Graphics-like API
-      if (def.shape === 'circle') {
-        // add.ellipse takes (x, y, width, height, fillColor)
-        obj = this.scene.add.ellipse(x, y, def.radius * 2, def.radius * 2, def.fillColor);
-      } else if (def.shape === 'rectangle') {
-        // add.rectangle takes (x, y, width, height, fillColor)
-        obj = this.scene.add.rectangle(x, y, def.width, def.height, def.fillColor);
-      } else {
-        console.warn(`Unknown primitive shape: ${def.shape}`);
-        return;
-      }
-    } else {
-      console.warn(`Unknown type: ${type}`);
+      // Gather unique keys for sprite entries only
+      const spriteKeys = Array.from(new Set(
+        defs
+          .filter(d => d.type === 'sprite' && typeof d.key === 'string' && d.key.length)
+          .map(d => d.key)
+      ));
+
+      // Queue each sprite image for loading
+      spriteKeys.forEach(key => {
+        this.scene.load.image(key, `assets/${key}.png`);
+      });
+
+      // Restart the loader so Phaser fetches these images
+      this.scene.load.start();
+    });
+  }
+
+  /** Calls in create(): reads sceneData and spawns each object */
+  create() {
+    const data = this.scene.cache.json.get('sceneData');
+    if (!Array.isArray(data)) {
+      console.error('sceneData must be an array of object definitions');
       return;
     }
 
-    // setup
-    obj
-      .setName(id)                         // name = unique id
-      .setScale(scale);                    // uniform scale
-    obj.rotation = Phaser.Math.DegToRad(rotation);
+    data.forEach(def => {
+      const { id, type, x, y, rotation = 0, scale = 1 } = def;
+      let obj;
 
-    // Record references & transforms
-    this.sprites[id] = obj;
-    // store all def fields so transformMap can drive full re-render or AI sync
-    this.transformMap[id] = { ...def };
-  });
-}
+      // Branch on type
+      if (type === 'sprite') {
+        // Sprite: use the preloaded texture key
+        obj = this.scene.add.sprite(x, y, def.key);
+      } else if (type === 'primitive') {
+        // Primitive: draw a shape with Phaser's Graphics-like API
+        if (def.shape === 'circle') {
+          obj = this.scene.add.ellipse(x, y, def.radius * 2, def.radius * 2, def.fillColor);
+        } else if (def.shape === 'rectangle') {
+          obj = this.scene.add.rectangle(x, y, def.width, def.height, def.fillColor);
+        } else {
+          console.warn(`Unknown primitive shape: ${def.shape}`);
+          return;
+        }
+      } else {
+        console.warn(`Unknown type: ${type}`);
+        return;
+      }
+
+      // Common setup
+      obj
+        .setName(id)        // name = unique id
+        .setScale(scale);   // uniform scale
+      obj.rotation = Phaser.Math.DegToRad(rotation);
+
+      // Record references & transforms
+      this.sprites[id] = obj;
+      this.transformMap[id] = { ...def };
+    });
+  }
 
   /**
- * Generate a new unique ID for a given baseKey.
- * E.g. generateId('tree') → 'tree1', then 'tree2', etc.
- */
-generateId(baseKey) {
-  if (!this.idCounters[baseKey]) {
-    this.idCounters[baseKey] = 1;
+   * Completely replace the current scene with a new set of definitions.
+   * @param {Array<Object>} defs  an array matching scene.json schema
+   */
+  loadScene(defs) {
+    // Destroy all existing objects
+    Object.values(this.sprites).forEach(o => o.destroy());
+
+    // Reset our maps
+    this.sprites = {};
+    this.transformMap = {};
+
+    // Re-spawn everything
+    defs.forEach(def => {
+      const { id, type, x, y, rotation = 0, scale = 1 } = def;
+      let obj;
+
+      if (type === 'sprite') {
+        obj = this.scene.add.sprite(x, y, def.key);
+      } else if (type === 'primitive') {
+        if (def.shape === 'circle') {
+          obj = this.scene.add.ellipse(x, y, def.radius * 2, def.radius * 2, def.fillColor);
+        } else if (def.shape === 'rectangle') {
+          obj = this.scene.add.rectangle(x, y, def.width, def.height, def.fillColor);
+        } else {
+          console.warn(`Unknown primitive shape: ${def.shape}`);
+          return;
+        }
+      } else {
+        console.warn(`Unknown type: ${type}`);
+        return;
+      }
+
+      obj
+        .setName(id)
+        .setScale(scale);
+      obj.rotation = Phaser.Math.DegToRad(rotation);
+
+      this.sprites[id] = obj;
+      this.transformMap[id] = { ...def };
+    });
   }
-  let candidate;
-  do {
-    candidate = `${baseKey}${this.idCounters[baseKey]}`;
-    this.idCounters[baseKey]++;
-  } while (this.sprites[candidate]);
-  return candidate;
-}
 
-/**
- * Register a newly created sprite into our maps.
- * Used by addRemove.addSprite().
- */
-registerSprite(sprite, { x, y, rotation = 0, scale = 1 }) {
-  const id = sprite.name;
-  this.sprites[id] = sprite;
-  this.transformMap[id] = { x, y, rotation, scale };
-}
-
-/**
- * Merge a partial update into an object's transform.
- * Also applies the change to the live sprite.
- */
-updateTransform(id, patches) {
-  const sprite = this.sprites[id];
-  if (!sprite) {
-    console.warn(`No sprite found with id=${id}`);
-    return;
+  /**
+   * Generate a new unique ID for a given baseKey.
+   * E.g. generateId('tree') → 'tree1', then 'tree2', etc.
+   */
+  generateId(baseKey) {
+    if (!this.idCounters[baseKey]) {
+      this.idCounters[baseKey] = 1;
+    }
+    let candidate;
+    do {
+      candidate = `${baseKey}${this.idCounters[baseKey]}`;
+      this.idCounters[baseKey]++;
+    } while (this.sprites[candidate]);
+    return candidate;
   }
 
-  // Update live object
-  if (patches.x !== undefined)      sprite.x = patches.x;
-  if (patches.y !== undefined)      sprite.y = patches.y;
-  if (patches.rotation !== undefined) {
-    sprite.rotation = Phaser.Math.DegToRad(patches.rotation);
+  /**
+   * Register a newly created sprite into our maps.
+   * Used by addRemove.addSprite().
+   */
+  registerSprite(sprite, { x, y, rotation = 0, scale = 1 }) {
+    const id = sprite.name;
+    this.sprites[id] = sprite;
+    this.transformMap[id] = { x, y, rotation, scale, type: 'sprite', key: sprite.texture.key };
   }
-  if (patches.scale !== undefined)  sprite.setScale(patches.scale);
 
-  // Merge into our map
-  this.transformMap[id] = {
-    ...this.transformMap[id],
-    ...patches
-  };
-}
+  /**
+   * Merge a partial update into an object's transform.
+   * Also applies the change to the live sprite.
+   */
+  updateTransform(id, patches) {
+    const sprite = this.sprites[id];
+    if (!sprite) {
+      console.warn(`No sprite found with id=${id}`);
+      return;
+    }
 
-/** Retrieve the Phaser sprite by its ID */
-getSpriteById(id) {
-  return this.sprites[id];
-}
+    if (patches.x !== undefined)      sprite.x = patches.x;
+    if (patches.y !== undefined)      sprite.y = patches.y;
+    if (patches.rotation !== undefined) sprite.rotation = Phaser.Math.DegToRad(patches.rotation);
+    if (patches.scale !== undefined)   sprite.setScale(patches.scale);
 
-/** Remove an object from both our maps */
-unregisterId(id) {
-  delete this.sprites[id];
-  delete this.transformMap[id];
-}
+    this.transformMap[id] = { ...this.transformMap[id], ...patches };
+  }
 
-/** Get the full transform map (for saving or AI payload) */
-getTransformMap() {
-  return { ...this.transformMap };
-}
+  /** Retrieve the Phaser object by its ID */
+  getSpriteById(id) {
+    return this.sprites[id];
+  }
+
+  /** Remove an object from both our maps */
+  unregisterId(id) {
+    if (this.sprites[id]) this.sprites[id].destroy();
+    delete this.sprites[id];
+    delete this.transformMap[id];
+  }
+
+  /** Get the full transform map (for saving or AI payload) */
+  getTransformMap() {
+    return { ...this.transformMap };
+  }
 }

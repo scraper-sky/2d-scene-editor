@@ -1,12 +1,13 @@
 #phaser-canvas {
-    width: 800px;
-    height: 600px;
-    margin: 0 auto;
-    background: #222; /* so you can see the bounds */
-  }
-  #phaser-canvas canvas {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+  margin-top: 50px;
+  background: #222;
+}
+#phaser-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
   

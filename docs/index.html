@@ -12,9 +12,19 @@
     <button id="removeButton">Remove</button>
     <button id="moveButton">Move</button>
     <button id="scaleButton">Scale</button>
+     <!-- new: user‐entered AI instruction -->
+    <input type="text"
+      id="aiInstruction"
+      placeholder="e.g. add circle at x:100,y:200"
+      style="width:200px; margin: 0 8px;"
+    />
     <button id="pushAiButton">Push to AI</button>
+    <button id="saveButton">Save Scene</button>
+    <button id="loadButton">Load Scene</button>
+    <input type="file" id="loadInput" accept=".json" style="display:none" />
   </div>
   <div id="phaser-canvas"></div>
+
 
   <!-- 1) Phaser global bundle -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
