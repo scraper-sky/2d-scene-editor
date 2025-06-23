@@ -2,14 +2,14 @@
 /**
  * Adds a new sprite to the scene and updates the transform map.
  * @param {Phaser.Scene} scene 
- * @param {Object} sceneManager  // your sceneManager instance
+ * @param {Object} sceneManager  //sceneManager instance
  * @param {string} key          // asset key to use
  * @param {number} x 
  * @param {number} y
  */
 export function addSprite(scene, sceneManager, key, x = 0, y = 0) { //mark these functions exportable 
   const id = sceneManager.generateId(key); //we add independent identifiers based on asset key
-  if (!sprite) return;
+  if (!key) return;
   const sprite = scene.add.sprite(x, y, key) //spawns new phaser sprite using loaded texture from key
     .setName(id); //later lookups by name the generated ID
   sceneManager.registerSprite(sprite, { x, y, rotation: 0, scale: 1 }); 

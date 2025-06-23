@@ -7,7 +7,7 @@ const config = {
   type: Phaser.AUTO,
   width: 800,
   height: 600,
-  parent: 'phaser-canvas',  // make sure your index.html has <div id="phaser-canvas"></div>
+  parent: 'phaser-canvas',  // make sure index.html has <div id="phaser-canvas"></div>
   scene: {
     preload,
     create,
@@ -23,21 +23,11 @@ let sceneManager;
 
 // Preload function: load assets and the scene manifest
 function preload() {
+  // Instantiate the SceneManager so it can register its loader hooks
   sceneManager = new SceneManager(this);
 
-  // load the JSON manifest
-  this.load.json('sceneData', 'scene.json');
-
-  // once the manifest’s arrived, pull every unique key and queue its image
-  this.load.on('filecomplete-json-sceneData', () => {
-    const defs = this.cache.json.get('sceneData') || [];
-    const keys = Array.from(new Set(defs.map(d => d.key)));
-    keys.forEach(key => {
-      this.load.image(key, `assets/${key}.png`);
-    });
-    // restart the loader so it actually fetches those images
-    this.load.start();
-  });
+  // SceneManager.preload() will load scene.json and on filecomplete-json-sceneData, queue only sprite image loads
+  sceneManager.preload();
 
 }
 
