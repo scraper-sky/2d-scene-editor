@@ -13,10 +13,74 @@ import { pushToAI } from './ai.js';
 export function setupEditor(sceneManager, scene) {
   let selectedId = null;
 
+  // Keep an in-memory list of uploaded assets
+  const uploaded = [];
+  const uploadInput = document.getElementById('uploadAsset');
+  const assetMenu   = document.getElementById('asset-menu');
+
+  // Build or rebuild the asset-menu UI
+  function updateAssetMenu() {
+    assetMenu.innerHTML = '';
+    uploaded.forEach(({ key, dataURL }) => {
+      const btn = document.createElement('button');
+      btn.title = key;
+      btn.innerHTML = `<img src="${dataURL}">`;
+      btn.onclick = () => {
+        const { width, height } = scene.scale.gameSize;
+        const sprite = addSprite(
+          scene, sceneManager, key,
+          width / 2, height / 2
+        );
+        sprite.setTint(0x00ff00);
+      };
+      assetMenu.appendChild(btn);
+    });
+    localStorage.setItem('uploadedAssets', JSON.stringify(uploaded));
+  }
+
+  // Load persisted uploads on startup
+  const saved = JSON.parse(localStorage.getItem('uploadedAssets') || '[]');
+  if (saved.length) {
+    saved.forEach(({ key, dataURL }) => {
+      scene.textures.addBase64(key, dataURL);
+      uploaded.push({ key, dataURL });
+    });
+    updateAssetMenu();
+  }
+
+  // Handle new file uploads
+  uploadInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const key = file.name;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataURL = reader.result;
+      scene.textures.addBase64(key, dataURL);
+      uploaded.push({ key, dataURL });
+      updateAssetMenu();
+    };
+    reader.readAsDataURL(file);
+    uploadInput.value = '';
+  });
+
   // Make all loaded objects interactive so clicks register
   Object.values(sceneManager.sprites).forEach(obj => {
     // for sprites and primitives alike
     obj.setInteractive({ draggable: true });
+  });
+
+  // Global drag handler
+  scene.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+    // set the sprite to where the pointer is
+    gameObject.x = dragX;
+    gameObject.y = dragY;
+  
+    // persist into sceneManager
+    sceneManager.updateTransform(gameObject.name, {
+      x: dragX,
+      y: dragY
+    });
   });
 
   // Canvas click → select sprite or primitive under pointer

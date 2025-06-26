@@ -7,12 +7,35 @@
  * @param {number} x 
  * @param {number} y
  */
-export function addSprite(scene, sceneManager, key, x = 0, y = 0) { //mark these functions exportable 
-  const id = sceneManager.generateId(key); //we add independent identifiers based on asset key
+export function addSprite(scene, sceneManager, key, x = 0, y = 0) {
   if (!key) return;
-  const sprite = scene.add.sprite(x, y, key) //spawns new phaser sprite using loaded texture from key
-    .setName(id); //later lookups by name the generated ID
-  sceneManager.registerSprite(sprite, { x, y, rotation: 0, scale: 1 }); 
+
+  // create unique ID and spawn
+  const id = sceneManager.generateId(key);
+  const sprite = scene.add.sprite(x, y, key).setName(id);
+
+  // scale to a reasonable max dimension
+  const { width: w, height: h } = scene.textures.get(key).getSourceImage();
+  const maxDim = Math.max(w, h);
+  if (maxDim > 100) {
+    const s = 100 / maxDim;
+    sprite.setScale(s);
+  }
+
+  // make draggable 
+  sprite.setInteractive({ draggable: true });
+
+  // register in sceneManager
+  sceneManager.registerObject(sprite, {
+    id,
+    type: 'sprite',
+    key,
+    position: [x, y, 0],
+    rotation: [0, 0, 0],
+    scale:    [sprite.scaleX, sprite.scaleY, 1]
+  });
+
+  return sprite;
 }
 
 /**

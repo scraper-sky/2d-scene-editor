@@ -22,6 +22,14 @@
     <button id="saveButton">Save Scene</button>
     <button id="loadButton">Load Scene</button>
     <input type="file" id="loadInput" accept=".json" style="display:none" />
+    <!-- upload asset control right here -->
+    <label for="uploadAsset" class="file-upload-label">
+      <span>Upload Asset</span>
+    </label>
+    <input type="file" id="uploadAsset" accept="image/*" style="display:none" />
+
+    <!-- asset‐menu container -->
+    <div id="asset-menu" class="asset-menu"></div>
   </div>
   <div id="phaser-canvas"></div>
 
