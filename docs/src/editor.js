@@ -118,6 +118,40 @@ export function setupEditor(sceneManager, scene) {
     newObj.emit('pointerdown');
   });
 
+  // Add Rectangle
+  document.getElementById('addRectangle').addEventListener('click', () => {
+    const def = {
+      id: sceneManager.generateId('rect'),
+      type: 'primitive',
+      shape: 'rectangle',
+      width: 80, height: 60,
+      fillColor: 0x00aa00,
+      x: scene.scale.width/2,
+      y: scene.scale.height/2,
+      rotation: 0,
+      scale: 1
+    };
+    const spr = sceneManager.createPrimitive(def);
+    if (spr) spr.setInteractive({ draggable: true });
+  });
+
+  // Add Triangle
+  document.getElementById('addTriangle').addEventListener('click', () => {
+    const def = {
+      id: sceneManager.generateId('tri'),
+      type: 'primitive',
+      shape: 'triangle',
+      width: 80, height: 60,
+      fillColor: 0xaa0000,
+      x: scene.scale.width/2,
+      y: scene.scale.height/2,
+      rotation: 0,
+      scale: 1
+    };
+    const tri = sceneManager.createPrimitive(def);
+    if (tri) tri.setInteractive({ draggable: true });
+  });
+
   // Remove button → delete selected object
   document.getElementById('removeButton').addEventListener('click', () => {
     if (!selectedId) return;

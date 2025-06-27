@@ -30,13 +30,37 @@ app.post('/push-ai', async (req, res) => {
     {
       role: 'system',
       content: `
-You’re an editor for a 2D scene represented as a JSON array...
-Only return the updated JSON array, no extra text.
-`
+  You’re an editor for a 2D scene represented as a JSON array following this exact schema:
+  
+  [{
+    "id": string,
+    "type": "sprite" | "primitive",
+    // if type==="sprite": "key": string
+    // if type==="primitive": choose one:
+    //   circle:    "shape":"circle","radius":number
+    //   rectangle: "shape":"rectangle","width":number,"height":number
+    //   triangle:  "shape":"triangle","width":number,"height":number
+    "fillColor"?: number,
+    "position": [number,number,number],
+    "rotation": [number,number,number],
+    "scale":    [number,number,number]
+  }]
+  
+  When given a high-level instruction such as “create a house” or “create a person”,
+  decompose it into multiple primitive entries:
+  • For a house: rectangle for the body + triangle for the roof (you may add windows/doors)
+  • For a person: circle for head, rectangles for body/arms/legs
+  
+  Always generate unique “id” values (e.g. “houseBody1”, “roof1”, “person1_head”).
+  Only return the updated JSON array—no extra text or markdown.`
     },
     {
       role: 'user',
-      content: `Current scene:\n\`\`\`json\n${JSON.stringify(sceneDefs, null,2)}\`\`\`\nInstruction: ${instruction}`
+      content: `Current scene:
+  \`\`\`json
+  ${JSON.stringify(sceneDefs, null, 2)}
+  \`\`\`
+  Instruction: ${instruction}`
     }
   ];
 
