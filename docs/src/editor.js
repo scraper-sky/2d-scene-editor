@@ -2,10 +2,10 @@ import { addSprite, removeSprite } from './tools/addRemove.js';
 import { enableMoveTool }          from './tools/move.js';
 import { scaleSprite }             from './tools/scale.js';
 import { saveSceneJSON, loadSceneJSON } from './tools/saveLoad.js';
-import { pushToAI } from './ai.js';
+import { pushToAI }                from './ai.js';
 
 /**
- * Hooks up UI buttons and canvas interactions to your scene tools.
+ * Hook up UI buttons and canvas interactions to scene tools.
  *
  * @param {SceneManager} sceneManager 
  * @param {Phaser.Scene} scene         
@@ -13,12 +13,13 @@ import { pushToAI } from './ai.js';
 export function setupEditor(sceneManager, scene) {
   let selectedId = null;
 
-  // Keep an in-memory list of uploaded assets
-  const uploaded = [];
-  const uploadInput = document.getElementById('uploadAsset');
-  const assetMenu   = document.getElementById('asset-menu');
+  // ————————————————————————————————
+  // Asset-upload menu
+  // ————————————————————————————————
+  const uploaded   = [];
+  const uploadInput= document.getElementById('uploadAsset');
+  const assetMenu  = document.getElementById('asset-menu');
 
-  // Build or rebuild the asset-menu UI
   function updateAssetMenu() {
     assetMenu.innerHTML = '';
     uploaded.forEach(({ key, dataURL }) => {
@@ -27,10 +28,7 @@ export function setupEditor(sceneManager, scene) {
       btn.innerHTML = `<img src="${dataURL}">`;
       btn.onclick = () => {
         const { width, height } = scene.scale.gameSize;
-        const sprite = addSprite(
-          scene, sceneManager, key,
-          width / 2, height / 2
-        );
+        const sprite = addSprite(scene, sceneManager, key, width/2, height/2);
         sprite.setTint(0x00ff00);
       };
       assetMenu.appendChild(btn);
@@ -38,23 +36,20 @@ export function setupEditor(sceneManager, scene) {
     localStorage.setItem('uploadedAssets', JSON.stringify(uploaded));
   }
 
-  // Load persisted uploads on startup
-  const saved = JSON.parse(localStorage.getItem('uploadedAssets') || '[]');
-  if (saved.length) {
-    saved.forEach(({ key, dataURL }) => {
+  // load persisted uploads
+  JSON.parse(localStorage.getItem('uploadedAssets') || '[]')
+    .forEach(({ key, dataURL }) => {
       scene.textures.addBase64(key, dataURL);
       uploaded.push({ key, dataURL });
     });
-    updateAssetMenu();
-  }
+  if (uploaded.length) updateAssetMenu();
 
-  // Handle new file uploads
   uploadInput.addEventListener('change', e => {
     const file = e.target.files[0];
     if (!file) return;
-    const key = file.name;
     const reader = new FileReader();
     reader.onload = () => {
+      const key = file.name;
       const dataURL = reader.result;
       scene.textures.addBase64(key, dataURL);
       uploaded.push({ key, dataURL });
@@ -64,109 +59,81 @@ export function setupEditor(sceneManager, scene) {
     uploadInput.value = '';
   });
 
-  // Make all loaded objects interactive so clicks register
-  Object.values(sceneManager.sprites).forEach(obj => {
-    // for sprites and primitives alike
-    obj.setInteractive({ draggable: true });
-  });
+  // ————————————————————————————————
+  // Make everything draggable & selectable
+  // ————————————————————————————————
+  Object.values(sceneManager.sprites)
+    .forEach(obj => obj.setInteractive({ draggable: true }));
 
-  // Global drag handler
   scene.input.on('drag', (pointer, gameObject, dragX, dragY) => {
-    // set the sprite to where the pointer is
     gameObject.x = dragX;
     gameObject.y = dragY;
-  
-    // persist into sceneManager
-    sceneManager.updateTransform(gameObject.name, {
-      x: dragX,
-      y: dragY
-    });
+    sceneManager.updateTransform(gameObject.name, { x: dragX, y: dragY });
   });
 
-  // Canvas click → select sprite or primitive under pointer
-  scene.input.on('gameobjectdown', (pointer, gameObject) => {
-    // clear previous highlight
-    Object.values(sceneManager.sprites).forEach(o => {
-      o.setAlpha(1);  // reset all to full opacity
-    });
-
-    // highlight the clicked object
+  scene.input.on('gameobjectdown', (_p, gameObject) => {
+    Object.values(sceneManager.sprites).forEach(o => o.setAlpha(1));
     selectedId = gameObject.name;
     gameObject.setAlpha(0.5);
-
-    // sprite?
     if (typeof gameObject.setTint === 'function') {
       gameObject.setTint(0xff0000);
-    }
-    // primitive?
-    else if (typeof gameObject.setFillStyle === 'function') {
+    } else if (typeof gameObject.setFillStyle === 'function') {
       gameObject.setFillStyle(0xff0000);
     }
   });
 
-  // Add button → prompt for asset key, then add at center
+  // ————————————————————————————————
+  // Primitive-button DRY-up
+  // ————————————————————————————————
+  const primitiveButtons = [
+    { btnId: 'addCircle',    shape: 'circle',    props: { radius: 30, fillColor: 0xff0000 } },
+    { btnId: 'addRectangle', shape: 'rectangle', props: { width: 80, height: 60, fillColor: 0x00aa00 } },
+    { btnId: 'addTriangle',  shape: 'triangle',  props: { width: 80, height: 60, fillColor: 0x0000ff } },
+  ];
+
+  primitiveButtons.forEach(({ btnId, shape, props }) => {
+    document.getElementById(btnId).addEventListener('click', () => {
+      const def = {
+        id:       sceneManager.generateId(shape),
+        type:     'primitive',
+        shape,
+        ...props,
+        x:        scene.scale.width  / 2,
+        y:        scene.scale.height / 2,
+        rotation: 0,
+        scale:    1
+      };
+      const obj = sceneManager.createPrimitive(def);
+      if (obj) obj.setInteractive({ draggable: true });
+    });
+  });
+
+  // ————————————————————————————————
+  // Sprite-button
+  // ————————————————————————————————
   document.getElementById('addButton').addEventListener('click', () => {
     const key = prompt('Enter asset key (must be preloaded):');
     if (!key) return;
     const { centerX, centerY } = scene.cameras.main;
-    addSprite(scene, sceneManager, key, centerX, centerY);
-
-    // make new sprite interactive and auto-select it
-    const newId = `${key}${sceneManager.idCounters[key] - 1}`;
-    const newObj = sceneManager.getSpriteById(newId);
-    newObj.setInteractive({ draggable: true });
-    newObj.emit('pointerdown');
+    const sprite = addSprite(scene, sceneManager, key, centerX, centerY);
+    sprite.setInteractive({ draggable: true });
+    sprite.emit('pointerdown');
   });
 
-  // Add Rectangle
-  document.getElementById('addRectangle').addEventListener('click', () => {
-    const def = {
-      id: sceneManager.generateId('rect'),
-      type: 'primitive',
-      shape: 'rectangle',
-      width: 80, height: 60,
-      fillColor: 0x00aa00,
-      x: scene.scale.width/2,
-      y: scene.scale.height/2,
-      rotation: 0,
-      scale: 1
-    };
-    const spr = sceneManager.createPrimitive(def);
-    if (spr) spr.setInteractive({ draggable: true });
-  });
-
-  // Add Triangle
-  document.getElementById('addTriangle').addEventListener('click', () => {
-    const def = {
-      id: sceneManager.generateId('tri'),
-      type: 'primitive',
-      shape: 'triangle',
-      width: 80, height: 60,
-      fillColor: 0xaa0000,
-      x: scene.scale.width/2,
-      y: scene.scale.height/2,
-      rotation: 0,
-      scale: 1
-    };
-    const tri = sceneManager.createPrimitive(def);
-    if (tri) tri.setInteractive({ draggable: true });
-  });
-
-  // Remove button → delete selected object
+  // ————————————————————————————————
+  // Remove / Move / Scale / AI / Save / Load
+  // ————————————————————————————————
   document.getElementById('removeButton').addEventListener('click', () => {
     if (!selectedId) return;
     removeSprite(scene, sceneManager, selectedId);
     selectedId = null;
   });
 
-  // Move button → enable dragging on the selected object
   document.getElementById('moveButton').addEventListener('click', () => {
     if (!selectedId) return;
-    const obj = sceneManager.getSpriteById(selectedId);
-    enableMoveTool(scene, sceneManager, obj);
+    enableMoveTool(scene, sceneManager, sceneManager.getSpriteById(selectedId));
   });
 
-  // Scale button → prompt for factor and apply to selected
   document.getElementById('scaleButton').addEventListener('click', () => {
     if (!selectedId) return;
     const f = parseFloat(prompt('Scale factor (e.g. 1.1 or 0.8):'));
@@ -174,39 +141,29 @@ export function setupEditor(sceneManager, scene) {
     scaleSprite(sceneManager, selectedId, f);
   });
 
-  // Push-to-AI stub
   document.getElementById('pushAiButton').addEventListener('click', async () => {
     const instr = document.getElementById('aiInstruction').value.trim();
-    if (!instr) {
-      return alert('Please enter an instruction above.');
-    }
-    // disable the button while we wait
+    if (!instr) return alert('Please enter an instruction above.');
     const btn = document.getElementById('pushAiButton');
-    btn.disabled = true;
-    btn.textContent = 'Thinking…';
-
+    btn.disabled = true; btn.textContent = 'Thinking…';
     try {
       await pushToAI(sceneManager, instr);
     } catch (e) {
       console.error('AI push failed', e);
       alert('AI call failed, see console.');
     } finally {
-      btn.disabled = false;
-      btn.textContent = 'Push to AI';
+      btn.disabled = false; btn.textContent = 'Push to AI';
     }
   });
 
-  // Save Scene → download current scene.json
   document.getElementById('saveButton').addEventListener('click', () => {
     saveSceneJSON(sceneManager);
   });
 
-  // Load Scene → open file picker
   document.getElementById('loadButton').addEventListener('click', () => {
     document.getElementById('loadInput').click();
   });
-  // When a file is chosen, read & apply it
-  document.getElementById('loadInput').addEventListener('change', (e) => {
+  document.getElementById('loadInput').addEventListener('change', e => {
     loadSceneJSON(e, sceneManager);
   });
 }
