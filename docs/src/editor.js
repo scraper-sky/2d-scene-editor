@@ -109,16 +109,8 @@ export function setupEditor(sceneManager, scene) {
   });
 
   // ————————————————————————————————
-  // Sprite-button
+  // Sprite-button (removed - now handled by asset menu)
   // ————————————————————————————————
-  document.getElementById('addButton').addEventListener('click', () => {
-    const key = prompt('Enter asset key (must be preloaded):');
-    if (!key) return;
-    const { centerX, centerY } = scene.cameras.main;
-    const sprite = addSprite(scene, sceneManager, key, centerX, centerY);
-    sprite.setInteractive({ draggable: true });
-    sprite.emit('pointerdown');
-  });
 
   // ————————————————————————————————
   // Remove / Move / Scale / AI / Save / Load
@@ -145,14 +137,16 @@ export function setupEditor(sceneManager, scene) {
     const instr = document.getElementById('aiInstruction').value.trim();
     if (!instr) return alert('Please enter an instruction above.');
     const btn = document.getElementById('pushAiButton');
+    const originalText = btn.textContent;
     btn.disabled = true; btn.textContent = 'Thinking…';
     try {
+      console.log('[Push to AI] Sending instruction:', instr);
       await pushToAI(sceneManager, instr);
     } catch (e) {
       console.error('AI push failed', e);
-      alert('AI call failed, see console.');
+      alert('AI call failed, see console. ' + (e && e.message ? e.message : e));
     } finally {
-      btn.disabled = false; btn.textContent = 'Push to AI';
+      btn.disabled = false; btn.textContent = originalText;
     }
   });
 

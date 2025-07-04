@@ -5,40 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>2D Scene Editor</title>
   <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <div id="toolbar">
-    <button id="addButton">Add Circ</button>
-    <button id="addRectangle">Add Rect</button>
-    <button id="addTriangle">Add Tri</button>
-    <button id="removeButton">Remove</button>
-    <button id="moveButton">Move</button>
-    <button id="scaleButton">Scale</button>
-     <!-- new: user‐entered AI instruction -->
-    <input type="text"
-      id="aiInstruction"
-      placeholder="e.g. add circle at x:100,y:200"
-      style="width:200px; margin: 0 8px;"
-    />
-    <button id="pushAiButton">Push to AI</button>
-    <button id="saveButton">Save Scene</button>
-    <button id="loadButton">Load Scene</button>
-    <input type="file" id="loadInput" accept=".json" style="display:none" />
-    <!-- upload asset control right here -->
-    <label for="uploadAsset" class="file-upload-label">
-      <span>Upload Asset</span>
-    </label>
-    <input type="file" id="uploadAsset" accept="image/*" style="display:none" />
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="title">2D Scene Editor</h1>
+      <div class="header-actions">
+        <button id="saveButton" class="btn btn-primary">Save Scene</button>
+        <button id="loadButton" class="btn btn-secondary">Load Scene</button>
+        <input type="file" id="loadInput" accept=".json" style="display:none" />
+      </div>
+    </header>
 
-    <!-- asset‐menu container -->
-    <div id="asset-menu" class="asset-menu"></div>
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <!-- Shapes Section -->
+        <div class="tool-section">
+          <h3 class="section-title">Shapes</h3>
+          <div class="shape-grid">
+            <button id="addCircle" class="shape-btn" title="Add Circle">
+              <div class="shape-preview circle"></div>
+              <span>Circle</span>
+            </button>
+            <button id="addRectangle" class="shape-btn" title="Add Rectangle">
+              <div class="shape-preview rectangle"></div>
+              <span>Rectangle</span>
+            </button>
+            <button id="addTriangle" class="shape-btn" title="Add Triangle">
+              <div class="shape-preview triangle"></div>
+              <span>Triangle</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tools Section -->
+        <div class="tool-section">
+          <h3 class="section-title">Tools</h3>
+          <div class="tool-grid">
+            <button id="moveButton" class="tool-btn" title="Move selected object">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 9l-3 3 3 3"/>
+                <path d="M9 5l3-3 3 3"/>
+                <path d="M15 19l3-3 3 3"/>
+                <path d="M19 9l3 3-3 3"/>
+                <path d="M2 12h20"/>
+                <path d="M12 2v20"/>
+              </svg>
+              Move
+            </button>
+            <button id="scaleButton" class="tool-btn" title="Scale selected object">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 3l-6 6"/>
+                <path d="M9 3l6 6"/>
+                <path d="M21 21l-6-6"/>
+                <path d="M9 21l6-6"/>
+                <path d="M3 9l6 6"/>
+                <path d="M3 21l6-6"/>
+              </svg>
+              Scale
+            </button>
+            <button id="removeButton" class="tool-btn tool-btn-danger" title="Remove selected object">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3,6 5,6 21,6"/>
+                <path d="M19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"/>
+                <line x1="10" y1="11" x2="10" y2="17"/>
+                <line x1="14" y1="11" x2="14" y2="17"/>
+              </svg>
+              Remove
+            </button>
+          </div>
+        </div>
+
+        <!-- Assets Section -->
+        <div class="tool-section">
+          <h3 class="section-title">Assets</h3>
+          <div class="asset-upload">
+            <label for="uploadAsset" class="upload-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17,8 12,3 7,8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload Image
+            </label>
+            <input type="file" id="uploadAsset" accept="image/*" style="display:none" />
+          </div>
+          <div id="asset-menu" class="asset-menu"></div>
+        </div>
+
+        <!-- AI Section -->
+        <div class="tool-section">
+          <h3 class="section-title">AI Assistant</h3>
+          <div class="ai-controls">
+            <textarea 
+              id="aiInstruction" 
+              class="ai-input"
+              placeholder="Describe what you want to create...&#10;e.g., 'create a circle at x:100, y:200'&#10;or 'create a house with a triangle roof'"
+              rows="3"
+            ></textarea>
+            <button id="pushAiButton" class="btn btn-ai">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 2L11 13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              Generate with AI
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Canvas Area -->
+      <main class="canvas-area">
+        <div id="phaser-canvas"></div>
+        <div class="canvas-overlay">
+          <div class="status-bar">
+            <span class="status-text">Ready to edit</span>
+            <span class="object-count">Objects: 0</span>
+          </div>
+        </div>
+      </main>
+    </div>
   </div>
-  <div id="phaser-canvas"></div>
 
-
-  <!-- 1) Phaser global bundle -->
+  <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
-  <!-- 2) Your app logic as an ES module -->
   <script type="module" src="src/main.js"></script>
 </body>
 </html>
